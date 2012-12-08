@@ -210,6 +210,7 @@ my $foundList = $obj->pragmaRequest(\@list);
 my $foundIndv = $obj->pragmaRequest('gvf-version');
 
 #------------------------------------------------------------------------------
+=cut
 
 =head1 SUBROUTINES/METHODS
 
