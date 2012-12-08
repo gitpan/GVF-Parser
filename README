@@ -1,0 +1,58 @@
+GVF-Parser
+
+A Lite parser for Genome Variation Format (GVF) files.  
+
+
+GVF BACKGROUND
+
+The Genome Variation Format (GVF) is a very simple file format for describing sequence_alteration features at nucleotide resolution relative to a reference genome. The GVF format was published in Reese et al., Genome Biol., 2010;11(8):R88
+
+GVF is a type of GFF3 file with additional pragmas and attributes specified. The GVF format has the same nine-column tab-delimited format as GFF3. All of the requirements and restrictions specified for GFF3 apply to the GVF specification as well and thus a GVF file should be fully compatible with code used for processing and displaying GFF3 files. In addition, GVF adds additional constraints to some of these columns as described via http://www.sequenceontology.org/resources/gvf.html
+
+
+GVF::Parser
+
+GVF::Parser partitions GVF files into pragma and feature data, and the feature data is further split into features and attributes.  Pragma data is stored in object, and can be requested using the pragmaRequest method.  Attribute information is stored/saved in a sqlite datafile, and can be accessed using the attributeRequest method, or more preferably via DBIx::Class requestset.  
+
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Makefile.PL
+	make
+	make test
+	make install
+
+SUPPORT AND DOCUMENTATION
+
+After installing, you can find documentation for this module with the
+perldoc command.
+
+    perldoc GVF::Parser
+
+You can also look for information at:
+
+    RT, CPAN's request tracker (report bugs here)
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=GVF-Parser
+
+    AnnoCPAN, Annotated CPAN documentation
+        http://annocpan.org/dist/GVF-Parser
+
+    CPAN Ratings
+        http://cpanratings.perl.org/d/GVF-Parser
+
+    Search CPAN
+        http://search.cpan.org/dist/GVF-Parser/
+
+
+LICENSE AND COPYRIGHT
+
+Copyright (C) 2012 Shawn Rynearson
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
