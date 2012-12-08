@@ -111,6 +111,11 @@ sub features {
 
 #------------------------------------------------------------------------------
 
+no Moose;
+1;
+
+__END__
+
 =head1 NAME
 
 GVF::Parser - A parser for Genome Variation Format files.
@@ -119,98 +124,91 @@ GVF::Parser - A parser for Genome Variation Format files.
 
 Version 0.01
 
-=cut
-
 =head1 SYNOPSIS
 
-Takes a given GVF file and creates a DBIx::Class sqlite3 database.
-In addition to having the ability to retrive sections of pragma and feature data.
+	use GVF::Parser;
 
-use GVF::Parser;
+	# Add unsupported attributes to the database. Currently five extra tags are allowed
 
-my $gvf = $ARGV[0] || die "Please enter gvf/db file\n";
+	# Example:
+	my $unsupported = {
+	    add_attribute1 => 'hgmd_disease',
+	    add_attribute2 => 'hgmd_location',
+	};
 
-# adding attributes to the database.
-# this will allow you to add desired unsupported attribute tags to the database.
-# they are accessed via hash tag values,
-# currently five extra tag are allowed.
-# Example: 'add_attribute1'
+	my $obj = GVF::Parser->new(
+	    file           => $gvf,          # required
+	    file_modifier  => $unsupported,  # pass the unsupported tags to GVF::Parser
+	);
 
-my $file_adds = {
-    add_attribute1 => 'hgmd_disease',
-    add_attribute2 => 'hgmd_location',
-};
+	# pragmas are stored in the object
+	# features are use to build sqlite database
 
-my $obj = GVF::Parser->new(
-    file           => $gvf,        # required
-    file_modifier  => $file_adds,  # pass the unsupported tags to GVF::Parser
-);
+	$obj->pragmas;
+	$obj->features;
 
-# pass the request to set values.
-# pragmas are stored in the object
-# features are use to build sqlite database
+	#---------------------------------------------------------
 
-$obj->pragmas;
-$obj->features;
+	# Example one
+	# DBIx::Class approach.
 
-#---------------------------------------------------------
+	# connection to db via DBIx::Class object
+	my $dbi = $obj->get_dbixclass;
 
+	# a simple example using DBIx::Class.
+	my $features   = $dbi->resultset('Features');
+	my $attributes = $dbi->resultset('Attributes');
 
-# Example one
-# DBIx::Class approach.
+	# create a hash of all the feature items wanted
+	# using feature table primary key
+	my %feats;
+	while (my $f = $features->next) {
+	    $feats{ $f->id } = {
+		type  => $f->type,
+		start => $f->start,
+		end   => $f->end,
+	    };
+	}
 
-# connection to db via DBIx::Class object
-my $dbi = $obj->get_dbixclass;
+	# use attribure resultset to access desired parts of file
+	# using attributes foreign_key to maintain relationship with features
+	while (my $i = $attributes->next ){
+	    if ( $feats{ $i->features_id } ){
+		my $varInfo = $obj->effectHash( $i->varianteffect );
 
-# use DBIx::Class as standard from this point.
-my $features   = $dbi->resultset('Features');
-my $attributes = $dbi->resultset('Attributes');
+		if ( $varInfo->{'three_prime_UTR_variant'}) {
+			print $varInfo->{'three_prime_UTR_variant'}->{'feature_type'}, "\t";
+			print $varInfo->{'three_prime_UTR_variant'}->{'feature'}, "\t";
+			print $feats{ $i->features_id }->{'start'}, "\t";
+			print $feats{ $i->features_id }->{'type'}, "\t";
+			print $i->referenceseq, "\t";
+			print $i->variantseq, "\n";
+		}
+	    }
+	}
 
-# create a hash of all the feature items wanted
-# using feature table primary key
-my %feats;
-while (my $f = $features->next) {
-    $feats{ $f->id } = {
-        type  => $f->type,
-        start => $f->start,
-        end   => $f->end,
-    };
-}
+	#------------------------------------------------------------------------------
 
-# use attribure resultset to access desired parts of file
-# using attributes foreign_key to maintain relationship with features
-while (my $i = $attributes->next ){
-    if ( $feats{ $i->features_id } ){
-        my $varInfo = $obj->effectHash( $i->varianteffect );
+	# Example two.
+	# accessing data in parts
 
-        if ( $varInfo->{'three_prime_UTR_variant'}) {
-                print $varInfo->{'three_prime_UTR_variant'}->{'feature_type'}, "\t";
-                print $varInfo->{'three_prime_UTR_variant'}->{'feature'}, "\t";
-                print $feats{ $i->features_id }->{'start'}, "\t";
-                print $feats{ $i->features_id }->{'type'}, "\t";
-                print $i->referenceseq, "\t";
-                print $i->variantseq, "\n";
-        }
-    }
-}
+	# Example of using request methods.
+	my @feats   = $obj->featureRequest('seqid', 'uniq');
+	my @atts    = $obj->attributeRequest('Variant_effect');
+	my $regions = $obj->sequenceRegions;
 
-#------------------------------------------------------------------------------
+	# pragma can be requested with list or individually.
+	my @wantList  = qw/ multi-individual population  /;
+	my $foundList = $obj->pragmaRequest(\@list);
+	my $foundIndv = $obj->pragmaRequest('gvf-version');
 
-# Example two.
-# accessing data in parts
+	#------------------------------------------------------------------------------
 
-# Example of using request methods.
-my @feats   = $obj->featureRequest('seqid', 'uniq');
-my @atts    = $obj->attributeRequest('Variant_effect');
-my $regions = $obj->sequenceRegions;
+=head1 DESCRIPTION
 
-# pragma can be requested with list or individually.
-my @wantList  = qw/ multi-individual population  /;
-my $foundList = $obj->pragmaRequest(\@list);
-my $foundIndv = $obj->pragmaRequest('gvf-version');
+Takes a given GVF file and creates a DBIx::Class sqlite3 database.  In addition to having the ability to retrive sections of pragma and feature data directly via methods provided.
 
-#------------------------------------------------------------------------------
-=cut
+GVF::Parser partitions GVF files into pragma and feature data, and the feature data is further split into features and attributes.  Pragma data is stored in object, and can be requested using the pragmaRequest method.  Attribute information is stored/saved in a sqlite datafile, and can be accessed using the attributeRequest method, or more preferably via DBIx::Class requestset
 
 =head1 SUBROUTINES/METHODS
 
@@ -220,8 +218,9 @@ my $foundIndv = $obj->pragmaRequest('gvf-version');
     Title    : pragmas
     Usage    : $obj->pragmas
     Function : Builds a SQLite3 database of Pragma values.
-    Returns  : Store pragma data in obj or will return a 
-               hash of pragma data.
+    Returns  : None.
+
+ Pragma data is stored in object and requested via <L<https://metacpan.org/module/GVF::Parser#pragmaRequest> or <L<https://metacpan.org/module/GVF::Parser#getPragma>
 
 =cut
 
@@ -232,6 +231,8 @@ my $foundIndv = $obj->pragmaRequest('gvf-version');
     Function : Builds a SQLite3 database of feature values.
     Returns  : None
 
+ This will populate a sqlite3 database creating a features and attributes table, parts of which can be accessed via <L<https://metacpan.org/module/GVF::Parser#featureRequest> or <L<https://metacpan.org/module/GVF::Parser#attributeRequest>
+
 =cut
 
 =head2 getPragmas
@@ -241,6 +242,8 @@ my $foundIndv = $obj->pragmaRequest('gvf-version');
     Function : Allow you to search for a specific pragma.
     Returns  : requested pragma
 
+ Allows you to search for a single pragma key.  <L<https://metacpan.org/module/GVF::Parser#pragmaRequest> offers more functionality.
+
 =cut
 
 =head2 pragmaKeys
@@ -248,7 +251,7 @@ my $foundIndv = $obj->pragmaRequest('gvf-version');
     Title    : pragmaKeys
     Usage    : $obj->pragmaKeys
     Function : Grabs a list of all pragma keys in a given file
-    Returns  : pragma keys
+    Returns  : List of all pragma keys
 
 =cut
 
@@ -257,7 +260,7 @@ my $foundIndv = $obj->pragmaRequest('gvf-version');
     Title    : pragmaValues
     Usage    : $obj->pragmaValues
     Function : Grabs a list of all pragma values in a given file
-    Returns  : pragma values
+    Returns  : List of all pragma values
 
 =cut
 
@@ -269,6 +272,93 @@ my $foundIndv = $obj->pragmaRequest('gvf-version');
     Returns  : DBIx::Class object
 
 =cut
+
+=head2 attributeRequest
+
+    Title    : attributeRequest
+    Usage    : @attributes = $obj->attributeRequest('referenceseq');
+               $attributes = $obj->attributeRequest('referenceseq', 'uniq');
+    Function : Caputre requested attribute type.
+    Returns  : Returns array of requested attribute types, or
+               returns array of uniq attributes of requested type
+ 
+=cut
+
+=head2 pragmaRequest
+
+    Title    : pragmaRequest
+    Usage    : $wanted = $obj->pragmaRequest($request) or
+               $wanted = $obj->pragmaRequest(\@arrayref)
+    Function : Capture requested simple pragma term
+    Returns  : Single request returns arrayref of value.
+               Passing list returns arrayref of all values.
+
+=cut
+
+=head2 featureRequest
+
+    Title    : featureRequest
+    Usage    : @features = $obj->featureRequest('seqid');
+               @features = $obj->featureRequest('seqid', 'uniq');
+    Function : Caputre requested feature types
+    Returns  : Returns array of requested features or,
+               returns array of uniq features of requested type
+
+=cut
+
+=head2 sequenceRegions
+
+    Title    : sequence_regions
+    Usage    : $regions = $obj->sequence_regions
+    Function : Capture all sequence regions from a GVF file.
+    Returns  : Arrayref of all sequence regions.
+
+=cut
+
+=head2 effectHash
+
+    Title    : effectHash
+    Usage    : $wanted = $obj->effectHash( varianteffect line ); 
+    Function : Will take individual Variant_effect line and return  
+               hashref of each feature type.
+    Returns  : Hashref of Variant_effect. 
+    Args     : Individual Variant_effect line.
+
+ Example  :
+       From DBIx::Class resultset:
+       my $varInfo = $obj->effectHash( $result->varianteffect );
+       
+ Returns:
+    $_ = {
+      'transcript_variant' => {
+                                'feature' => 'transcript',
+                                'index' => '0',
+                                'feature_type' => 'CD984159'
+                              },
+      'coding_sequence_variant' => {
+                                'feature' => 'mRNA',
+                                'index' => '0',
+                                'feature_type' => 'CD984159'
+                              },
+      'gene_variant' => {
+                                'feature' => 'gene',
+                                'index' => '0',
+                                'feature_type' => 'A2M'
+                              }
+         };
+=cut
+
+=head2 value_parse 
+
+    Title    : value_parse
+    Usage    : $obj->value_parse(\@values)
+    Function : Take arrayref of pragma values seperated by ';'
+               and returns a hashref of key values pair
+               example key=value;value
+    Returns  : Hashref of pragma key-values pairs.
+    
+=cut
+
 
 
 =head1 AUTHOR
@@ -285,8 +375,6 @@ automatically be notified of progress on your bug as I make changes.
 
 
 =head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
 
     perldoc GVF::Parser
 

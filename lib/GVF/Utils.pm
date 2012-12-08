@@ -109,39 +109,5 @@ sub value_parse {
 
 #-----------------------------------------------------------------------------
 
-=head2 pragmaRequest
-
-    Title    : pragmaRequest
-    Usage    : $wanted = $obj->pragmaRequest($request) or
-               $wanted = $obj->pragmaRequest(\@arrayref)
-    Function : Capture requested simple pragma term
-    Returns  : Single request returns arrayref of value.
-               Passing list returns arrayref of all values.
-    Args     : simple pragma ($request)
-
-=cut
-
-=head2 gvfValadate
-
-    Title    : gvfValadate
-    Usage    : $obj->Valadate
-               Requires sqlite3 database with GVF data, and fasta file
-               matching build version.
-    Function : Calculates the % of reference seq which match current
-               fasta build.
-    Returns  : Integer
-    
-=cut
-
-=head2 value_parse 
-
-    Title    : value_parse
-    Usage    : $obj->value_parse(\@values)
-    Function : Take arrayref of pragma values seperated by ';'
-               and returns a hashref of key values pair
-               example key=value;value
-    Returns  : Hashref of pragma key-values pairs.
-    
-=cut
-
+no Moose;
 1;
