@@ -1,7 +1,7 @@
 ---
 abstract: 'A parser for Genome Variation Format files.'
 author:
-  - 'Shawn Rynearson, C<< <shawn.rynerson at gmail.com> >>'
+  - 'Please contact me with any issue, method ideas/improvments or documentation matters. '
   - 'Shawn Rynearson <shawn.rynerson@gmail.com>'
 build_requires:
   ExtUtils::MakeMaker: 6.36
