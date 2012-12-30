@@ -3,7 +3,7 @@ use base qw/DBIx::Class::Core/;
 use strict;
 use warnings;
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 
 __PACKAGE__->table('ATTRIBUTES');
 
