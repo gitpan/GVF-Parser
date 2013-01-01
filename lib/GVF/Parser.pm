@@ -2,7 +2,7 @@ package GVF::Parser;
 use Moose;
 use Moose::Util::TypeConstraints;
 
-our $VERSION = '1.05';
+our $VERSION = '1.03';
 
 # master list of roles.
 with 'GVF::Roles';
@@ -15,7 +15,7 @@ has 'file' => (
     is       => 'rw',
     isa      => 'Str',
     reader   => 'file',
-    required => 1,
+    #required => 1,
 );
 
 has 'pragmas' => (
@@ -234,6 +234,32 @@ featureRequest calls will access the first eight elements of a feature line, and
 
 =head1 SUBROUTINES/METHODS
 
+=head2 new
+
+    Title    : new
+    Usage    : $obj = GVF::Parser->new()
+    Function : Builds GVF::Parser object.
+    Returns  : GVF::Parser object
+
+ Options
+    file (required):
+        Accepts scalar, command argument or path to GVF file.
+    file_modifier (optional):
+        Accepts hash ref of add_attribute.
+        This option allow users to include attrbute key[s] not currently
+        supported in the GVF spec.  Currently five additional attributes are allowed.
+
+ Example:
+    my $mod_hashref = {
+        add_attribute1 => 'hgmd_disease',
+    };
+
+    my $obj = GVF::Parser->new(
+        file           => $ARGV[0],
+        file_modifier  => $mod_hashref,
+    );
+
+=cut
 
 =head2 pragmas
 
@@ -242,7 +268,7 @@ featureRequest calls will access the first eight elements of a feature line, and
     Function : Build pragma data into the object.
     Returns  : None.
 
- Pragma data is stored in object and requested via pragmaRequest, getAllPragmas.
+Pragma data is stored in object and requested via pragmaRequest, getAllPragmas.  If this method is not used the object will not build pragma data.
 
 =cut
 
@@ -253,7 +279,8 @@ featureRequest calls will access the first eight elements of a feature line, and
     Function : Builds a SQLite3 database of feature values.
     Returns  : None
 
- This will populate a sqlite3 database creating a features and attributes table, parts of which can be accessed via featureRequest or attributeRequest.
+This will populate a sqlite3 database creating a features and attributes table, parts of which can be accessed via featureRequest or attributeRequest.
+If this method is not used the object will not build a feature database.
 
 =cut
 
@@ -264,7 +291,7 @@ featureRequest calls will access the first eight elements of a feature line, and
     Function : Retrieves a hash of all pragmas and values in a given file.
     Returns  : hash or (reference) of "pragma => value".
 
- Simple pragmas values are returned as simple key values pair e.g. gvf_version => '1.06', and structured pragma are returned as hash of hash e.g. data_source => { 'Type' => 'SNV' }
+Simple pragmas values are returned as simple key values pair e.g. gvf_version => '1.06'.  Structured pragma are returned as hash of hash e.g. data_source => { 'Type' => 'SNV' }.
 
 =cut
 
@@ -276,7 +303,7 @@ featureRequest calls will access the first eight elements of a feature line, and
     Function : Capture requested pragma term
     Returns  : Array or (reference) of requested pragma term in its original form.  Structured pragmas are not further broken down.
 
- This method allow you to request only a specfic pragma term, or a list of terms passed as an array reference.  All are returned in original form.
+This method allow you to request only a specfic pragma term, or a list of terms passed as an array reference.  All are returned in original form.
  
 =cut
 
@@ -284,7 +311,7 @@ featureRequest calls will access the first eight elements of a feature line, and
 
     Title    : sequenceRegions
     Usage    : $regions = $obj->sequenceRegions
-    Function : Capture all sequence regions from a GVF file.
+    Function : Captures all sequence regions from a GVF file.
     Returns  : Arrayref of all sequence regions.
 
 =cut
@@ -316,18 +343,19 @@ featureRequest calls will access the first eight elements of a feature line, and
     Returns  : array of hashref or (arrayref of hashref) of variant effects. 
     Args     : Individual Variant_effect line.
 
- This method is only designed to work with an individual Variant_effect from a feature line.  It use is not needed when using attributeRequest as that method preform the tidying for you.
+This method is only designed to work with an individual Variant_effect from a feature line.  It's not needed when using attributeRequest as that method preforms the tidying for you.
 
- Example of method return:
- 
+Example of method return structure:
+ [
     {
         feature_id         "CM990001",
         feature_type       "mRNA",
         index              0,
         sequence_variant   "coding_sequence_variant"
     },
+ ]
 
- The hashref's keys will always be as the example shows.  Please see "Example one DBIx::Class approach for individual usage example.
+The hashref's keys will always be as the example shows.  Please see "Example one DBIx::Class approach for individual usage example.
 
 =cut
 
@@ -338,8 +366,8 @@ featureRequest calls will access the first eight elements of a feature line, and
     Function : Handle used to connect to DBIx::Class
     Returns  : DBIx::Class object
 
- When assigning resultset the sqlite3 column names for features are the first eight columns of a feature line, and attribute columns are the allow GVF column names, lowercased with no underscores, e.g. referencecodon.
- Also allow are the five "added_attribute1" which can be added at object construction, and feature_id which is the foreign key to the feature table.
+When assigning resultset the sqlite3 column names for features are the first eight columns of a feature line, and attribute columns are the allow GVF column names, lowercased with no underscores, e.g. referencecodon.
+Also allow are the five "added_attribute1" which can be added at object construction, and feature_id which is the foreign key to the feature table.
 
 =cut
 

@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use warnings;
 use strict;
+use lib '/Users/shawn/GVF-Parser/lib';
 use GVF::Parser;
 
 
