@@ -2,7 +2,7 @@ package GVF::Parser;
 use Moose;
 use Moose::Util::TypeConstraints;
 
-our $VERSION = '1.03';
+our $VERSION = '1.07';
 
 # master list of roles.
 with 'GVF::Roles';
